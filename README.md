@@ -1,4 +1,3 @@
-# Dank-Dungeons-of-Doom-and-Despair
+# Jorp's adventure
 
-license agreement:
-  by playing this game you agree to have fun :D
+the adventure of jorp

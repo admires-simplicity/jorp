@@ -16,7 +16,7 @@ bool Colliding(Rectangle &a, Rectangle &b) {
 	else return false;
 }
 
-namespace dddd {
+namespace jorp {
 	class Rectangle : public ::Rectangle {
 	public:
 		int Top() {
@@ -50,7 +50,7 @@ typedef enum {
 
 class Entity {
 public:
-	dddd::Rectangle bounds;
+	jorp::Rectangle bounds;
 	Vector2 velocity;
 	float maxSpeed = 200.0f;
 	Color color;
@@ -69,26 +69,31 @@ public:
 		health(100)
 		{}
 
-	void UpdateBounds(std::vector<dddd::Rectangle> &walls) {
+	void UpdateBounds(std::vector<jorp::Rectangle> &walls) {
 		float deltaTime = GetFrameTime();
 
-		dddd::Rectangle nextBounds { bounds };
+		jorp::Rectangle nextBounds { bounds };
 
 		nextBounds.y += velocity.y*deltaTime;
 		velocity.y += G*deltaTime;
+
+		bool foundFloor = false;
 
 		for (size_t i = 0; i < walls.size(); ++i) {
 			if (Colliding(nextBounds, walls[i])) {
 				if (bounds.Above(walls[i])) {
 					onGround = true;
+					foundFloor = true;
 					nextBounds.y = walls[i].y - bounds.height;
 				} else {
 					nextBounds.y = walls[i].y + walls[i].height;
 				}
 				velocity.y = 0.0f;
-				break;
+				//break;
 			}
 		}
+
+		if (!foundFloor) onGround = false;
 
 		if (!moving && velocity.x != 0.0f) {
 			const float friction = 20.0f;
@@ -114,10 +119,11 @@ class Player : public Entity {
 public:
 	bool attacking;
 	int aframes;
-	dddd::Rectangle weaponBounds;
+	float jumpVelo = 225.0f;
+	jorp::Rectangle weaponBounds;
 
 #define PLAYER_WIDTH	20
-#define PLAYER_HEIGHT	60
+#define PLAYER_HEIGHT	40
 #define PLAYER_COLOR	WHITE
 	Player() :
 		Entity( { 0, 0, PLAYER_WIDTH, PLAYER_HEIGHT }, PLAYER_COLOR ),
@@ -133,42 +139,40 @@ public:
 		weaponBounds({0,0,0,0})
 		{}
 
-	void initiateAttack() {
-		if (!aframes) {
-			aframes = 15;
-			attacking = true;
-		}
-	}
+	// void initiateAttack() {
+	// 	if (!aframes) {
+	// 		aframes = 15;
+	// 		attacking = true;
+	// 	}
+	// }
 
 	void Move() {
 		//std::cout << "player.velocity.x = " << velocity.x << '\n';
-		if (IsKeyDown(KEY_SPACE) && onGround) {
-#define PLAYER_JUMP_SPD	325.0f
-			velocity.y = -PLAYER_JUMP_SPD;
-			onGround = false;
-#undef PLAYER_JUMP_SPD
-		}
 		const float hAccel = 30.0f;
-		if (IsKeyDown(KEY_A)) {
-			moving = true;
-			if (!attacking) direction = directions::LEFT;
-			//std::cout << directions::LEFT << '\n';
-			if (velocity.x - hAccel > -maxSpeed) velocity.x -= hAccel;
-			else                                 velocity.x  = -maxSpeed;
+		if (onGround) {
+			if (IsKeyDown(KEY_SPACE)) {
+				velocity.y = -jumpVelo;
+				onGround = false;
+			}
+			if (!(IsKeyDown(KEY_A) || IsKeyDown(KEY_D))) {
+				moving = false;
+			}
+			if (IsKeyDown(KEY_A)) {
+				moving = true;
+				if (!attacking) direction = directions::LEFT;
+				if (velocity.x - hAccel > -maxSpeed) velocity.x -= hAccel;
+				else                                 velocity.x  = -maxSpeed;
+			}
+			if (IsKeyDown(KEY_D)) {
+				moving = true;
+				if (!attacking) direction = directions::RIGHT;
+				if (velocity.x + hAccel < maxSpeed) velocity.x += hAccel;
+				else                                velocity.x  = maxSpeed;
+			}
 		}
-		if (IsKeyDown(KEY_D)) {
-			moving = true;
-			if (!attacking) direction = directions::RIGHT;
-			//std::cout << directions::RIGHT << '\n';
-			if (velocity.x + hAccel < maxSpeed) velocity.x += hAccel;
-			else                                velocity.x  = maxSpeed;
-		}
-		if (IsKeyReleased(KEY_A) || IsKeyReleased(KEY_D)) {
-			moving = false;
-		}
-		if (IsKeyPressed(KEY_J)) {
-			initiateAttack();
-		}
+		// if (IsKeyPressed(KEY_J)) {
+		// 	initiateAttack();
+		// }
 
 	}
 
@@ -185,7 +189,7 @@ public:
 	}
 
 	void DrawWeapon() {
-		dddd::Rectangle hilt = weaponBounds;
+		jorp::Rectangle hilt = weaponBounds;
 		hilt.width = 5.0f;
 		hilt.height = 25.0f;
 		hilt.y -= 10.0f;
@@ -223,57 +227,55 @@ void InitializeCamera(Camera2D &camera, Player &player, Vector2 screenSize) {
 	camera.zoom = 2.0f/3.0f;
 }
 
-// std::vector <dddd::Rectangle> four_walls {
-// 		dddd::Rectangle({ 0, 0, 1200, 5 }),
-// 		dddd::Rectangle({ 0, 0, 5, 900 }),
-// 		dddd::Rectangle({ 0, 895, 1200, 5 }),
-// 		dddd::Rectangle({ 1195, 0, 5, 900 }),
+// std::vector <jorp::Rectangle> four_walls {
+// 		jorp::Rectangle({ 0, 0, 1200, 5 }),
+// 		jorp::Rectangle({ 0, 0, 5, 900 }),
+// 		jorp::Rectangle({ 0, 895, 1200, 5 }),
+// 		jorp::Rectangle({ 1195, 0, 5, 900 }),
 // };
 
-#define four_walls	dddd::Rectangle({ 0, 0, 1200, 5 }), \
-  dddd::Rectangle({ 0, 0, 5, 900 }), \
-	dddd::Rectangle({ 0, 895, 1200, 5 }), \
-	dddd::Rectangle({ 1195, 0, 5, 900 })
+#define four_walls	jorp::Rectangle({ 0, 0, 1200, 5 }), \
+  jorp::Rectangle({ 0, 0, 5, 900 }), \
+	jorp::Rectangle({ 0, 895, 1200, 5 }), \
+	jorp::Rectangle({ 1195, 0, 5, 900 })
 
-std::vector <dddd::Rectangle> test_level { 
+std::vector <jorp::Rectangle> test_level { 
 	four_walls,
-		 dddd::Rectangle({ 0, 100, 600, 100 }),
-		 dddd::Rectangle({ 700, 200, 500, 100 }),
-		//dddd::Rectangle({ 0, 300, 1200, 100 }),
+	jorp::Rectangle({ 590, 850, 20, 5 }),
+	jorp::Rectangle({ 500, 830, 20, 5 }),
+	jorp::Rectangle({ 410, 810, 20, 5 }),
+	jorp::Rectangle({ 320, 790, 20, 5 }),
+	jorp::Rectangle({ 230, 770, 20, 5 }),
+	jorp::Rectangle({ 140, 750, 20, 5 }),
+	jorp::Rectangle({   5, 730, 85, 5 }),
+	jorp::Rectangle({  35, 680, 20, 5 }),
+	jorp::Rectangle({ 130, 660, 20, 5 }),
+	jorp::Rectangle({ 225, 640, 20, 5 }),
 
-		//floor
-		dddd::Rectangle({ 0, 800, 1200, 100 }),
+
+
+
+
+
 };
 
 int main() {
-	//Vector2 screenSize = { 1200, 900 };
 	Vector2 screenSize = { 800, 600 };
 	InitializeWindow(screenSize);
 
 	Player player;
-//	player.bounds.x += 650;
-	player.bounds.x += 10;
+	player.bounds.x += 900;
+	player.bounds.y += 895 - player.bounds.height;
+
+	player.maxSpeed = 100.0f;
 
 	Camera2D camera;
 	InitializeCamera(camera, player, screenSize);
 
-	// std::vector<dddd::Rectangle> level_walls { 
-	// 	// dddd::Rectangle({ 0, 100, 600, 100 }),
-	// 	// dddd::Rectangle({ 700, 200, 500, 100 }),
-	// 	//dddd::Rectangle({ 0, 300, 1200, 100 }),
-
-	// 	//floor
-	// 	dddd::Rectangle({ 0, 800, 1200, 100 }),
-	// 	//walls
-	// 	dddd::Rectangle({ 0, 0, 1200, 5 }),
-	// 	dddd::Rectangle({ 0, 0, 5, 900 }),
-	// 	dddd::Rectangle({ 0, 895, 1200, 5 }),
-	// 	dddd::Rectangle({ 1195, 0, 5, 900 }),
-	// };
-	std::vector<dddd::Rectangle> &level_walls = test_level;
+	std::vector<jorp::Rectangle> &level_walls = test_level;
 
 	std::vector<Monster> monsters {
-		Monster(500, 40),
+		//Monster(500, 40),
 	};
 
 	SetTargetFPS(60);
@@ -307,7 +309,7 @@ int main() {
 		}
 		else {
 			player.attacking = false;
-			player.weaponBounds = dddd::Rectangle({0,0,0,0});
+			player.weaponBounds = jorp::Rectangle({0,0,0,0});
 		}
 
 		for (auto &r : level_walls) {
